@@ -55,6 +55,10 @@ class CnfseServer:
             port=self.port
         )
         self.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            self.setsockopt(socket.SOL_TCP, socket.TCP_FASTOPEN, 256)
+        except Exception as e:
+            self._logger.warning(f'Failed to enable TCP Fast Open on server socket: {e}')
 
         await self._server.start_serving()
 
@@ -118,6 +122,8 @@ class CnfseServer:
                                writer=writer,
                                logger=self._logger,
                                on_done_callback=self._conns.discard)
+        conn.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+
         self._conns.add(conn)
         self._logger.info(f'Received connection from {conn.peername}')
 
@@ -189,7 +195,6 @@ class CnfseConnection:
 
     async def _process_conn(self) -> None:
         try:
-            self.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
             # Parse HTTP start-line and headers
             try:
                 request = await self._reader.readuntil(b'\r\n\r\n')
