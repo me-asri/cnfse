@@ -193,6 +193,7 @@ class CnfseConnection:
                 return
             if version not in {b'HTTP/1.0', b'HTTP/1.1'}:
                 self._logger.warning('Unsupported HTTP version')
+                return
 
             # Parse existing headers and drop them if necessary
             connection_header_exists = False
@@ -204,7 +205,7 @@ class CnfseConnection:
                 if self.server.drop_x_headers and lower.startswith(b'x-'):
                     continue
                 if not connection_header_exists and lower.startswith(b'connection:'):
-                    _, value = lower.split(b': ', maxsplit=1)
+                    _, value = lower.split(b':', maxsplit=1)
                     value = value.strip()
                     # We don't handle persistent keepalives
                     if value != b'upgrade' and value != b'close':
@@ -329,7 +330,7 @@ if __name__ == '__main__':
                            default=env_inject_host,
                            help='inject host')
     argparser.add_argument('-r', '--prepend-inject-host', action='store_true',
-                           default=bool(os.environ.get('CNFSE_PREPEND_INEJCT_HOST')),
+                           default=bool(os.environ.get('CNFSE_PREPEND_INJECT_HOST')),
                            help='prepend injected host instead of append')
     argparser.add_argument('-o', '--override-host', type=str,
                            default=os.environ.get('CNFSE_OVERRIDE_HOST'),

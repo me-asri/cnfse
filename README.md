@@ -1,6 +1,6 @@
 # cnfse
 
-HTTP virtual host confusion tool
+HTTP virtual host confusion by duplicate `Host` header injection
 
 ## Usage
 
