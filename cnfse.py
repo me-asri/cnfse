@@ -54,6 +54,8 @@ class CnfseServer:
             host=self.host,
             port=self.port
         )
+        self.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
         await self._server.start_serving()
 
     async def serve_forever(self) -> None:
@@ -61,6 +63,13 @@ class CnfseServer:
             raise RuntimeError('Server not started')
 
         await self._server.serve_forever()
+
+    def setsockopt(self, level: int, optname: int, value: int | bytes | bytearray | memoryview) -> None:
+        if self._server is None:
+            raise RuntimeError('Server not started')
+
+        for sock in self._server.sockets:
+            sock.setsockopt(level, optname, value)
 
     async def close(self) -> None:
         if self._server is None:
