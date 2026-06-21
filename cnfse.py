@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 import os
+import socket
 from functools import cached_property
 from ipaddress import ip_address, IPv4Address
 from types import TracebackType
@@ -141,6 +142,10 @@ class CnfseConnection:
             f'{self.__class__.__name__}.{self.peername}')
 
     @cached_property
+    def socket(self) -> socket.socket:
+        return self._writer.get_extra_info('socket')
+
+    @cached_property
     def peername(self) -> str:
         pn = self._writer.get_extra_info('peername', None)
 
@@ -175,6 +180,7 @@ class CnfseConnection:
 
     async def _process_conn(self) -> None:
         try:
+            self.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
             # Parse HTTP start-line and headers
             try:
                 request = await self._reader.readuntil(b'\r\n\r\n')
@@ -230,6 +236,8 @@ class CnfseConnection:
             try:
                 dest_reader, dest_writer = await asyncio.open_connection(host=self.server.dest_host,
                                                                          port=self.server.dest_port)
+                dest_sock: socket.socket = dest_writer.get_extra_info('socket')
+                dest_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
             except ConnectionError as e:
                 self._logger.error(f'Failed to connect to destination: {e}')
                 return
